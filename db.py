@@ -2,7 +2,6 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 
 from dotenv import load_dotenv
 import os
-from db_base import Base
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -13,25 +12,27 @@ db_host = os.getenv("DB_HOST")
 db_port = os.getenv("DB_PORT")
 
 # Database URL format: postgresql+asyncpg://user:password@host:port/dbname
-DATABASE_URL = f"postgresql+asyncpg://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+DATABASE_URL = (
+    f"postgresql+asyncpg://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+)
 
 # Create the async engine
 engine = create_async_engine(DATABASE_URL, echo=True)
 
 # Create a session maker for handling requests
-AsyncSessionLocal = async_sessionmaker(bind=engine,class_=AsyncSession , expire_on_commit=False)
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine, class_=AsyncSession, expire_on_commit=False
+)
+
 
 # Dependency to get a database session for each API request
 async def get_db():
     async with AsyncSessionLocal() as session:
         yield session
 
-async def init_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-
     # yield
     # await engine.dispose()
+
 
 # task_db = [
 #     { "id": 1, "title": "Task 1", "description": "This is task 1", "completed": False },

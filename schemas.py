@@ -1,86 +1,105 @@
-# schema
-from pydantic import BaseModel, EmailStr, ConfigDict
-from typing import Optional
-
-class TaskResponse(BaseModel):
-    id: int
-    title: str
-    description: str
-    completed: bool
-
-    model_config = ConfigDict(from_attributes=True)
-
-class TaskCreate(BaseModel):
-    title: str
-    description: str
-
-# PUT -> full replace, sob field required
-class TaskReplace(BaseModel):
-    title: str
-    description: str
-    completed: bool = False
-
-# PATCH -> partial update, sob field optional
-class TaskUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    completed: Optional[bool] = None
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class UserBase(BaseModel):
     username: str
     email: EmailStr
 
-class UserCreate(UserBase):
-    password: str
-
-# PUT -> full replace
-class UserReplace(UserBase):
-    password: str
-    is_active: bool = True
-
-# PATCH -> partial update
-class UserUpdate(BaseModel):
-    username: Optional[str] = None
-    email: Optional[EmailStr] = None
-    password: Optional[str] = None
-    is_active: Optional[bool] = None
 
 class UserResponse(UserBase):
     id: int
     is_active: bool
+    role: str
 
     model_config = ConfigDict(from_attributes=True)
 
-
-# ---------------- Auth schemas ----------------
 
 class UserRegister(UserBase):
-    """Registration er jonno input schema (username, email, password)."""
-    password: str
+    password: str = Field(min_length=8)
 
 
-class UserRegisterResponse(BaseModel):
-    """Registration success e ei shape er data ferot jabe (password kokhono na)."""
-    id: int
-    username: str
-    email: EmailStr
-    is_active: bool
-
-    model_config = ConfigDict(from_attributes=True)
+class UserRegisterResponse(UserResponse):
+    pass
 
 
 class UserLogin(BaseModel):
-    """Login er jonno input schema."""
     username: str
     password: str
 
 
 class UserLoginResponse(BaseModel):
-    """Login success e ei shape er data ferot jabe."""
     message: str
     id: int
     username: str
     email: EmailStr
+    access_token: str
+    token_type: str = "bearer"
+
+
+class ProjectCreate(BaseModel):
+    title: str = Field(min_length=1)
+    description: str = ""
+
+
+class ProjectResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    owner_id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class ProjectMemberCreate(BaseModel):
+    user_id: int
+    can_edit: bool = False
+
+
+class ProjectMemberPermissionUpdate(BaseModel):
+    can_edit: bool
+
+
+class ProjectMemberResponse(BaseModel):
+    id: int
+    project_id: int
+    user_id: int
+    can_edit: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TaskCreate(BaseModel):
+    title: str = Field(min_length=1)
+    description: str = ""
+    assigned_to_id: int
+
+
+class TaskUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=1)
+    description: str | None = None
+    completed: bool | None = None
+    assigned_to_id: int | None = None
+
+
+class TaskResponse(BaseModel):
+    id: int
+    title: str
+    description: str
+    completed: bool
+    project_id: int | None
+    assigned_to_id: int | None
+    created_by_id: int | None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class SystemLimitUpdate(BaseModel):
+    max_projects_per_user: int = Field(ge=1)
+    max_tasks_per_user: int = Field(ge=1)
+    max_tasks_per_project: int = Field(ge=1)
+
+
+class SystemLimitResponse(SystemLimitUpdate):
+    id: int
 
     model_config = ConfigDict(from_attributes=True)

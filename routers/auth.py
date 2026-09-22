@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import get_db
 from models import User
 from schemas import UserRegister, UserRegisterResponse, UserLogin, UserLoginResponse
-from core.security import hash_password, verify_password
+from core.security import create_access_token, hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -87,7 +87,7 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="This account is inactive.",
+            detail="Your account is temporarily banned",
         )
 
     return UserLoginResponse(
@@ -95,4 +95,5 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
         id=user.id,
         username=user.username,
         email=user.email,
+        access_token=create_access_token({"sub": str(user.id)}),
     )
